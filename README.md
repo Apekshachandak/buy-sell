@@ -222,3 +222,10 @@ components/      Navbar, ListingCard, StarRating, SmartTemplate
 models/          Mongoose schemas — User, Listing, Offer, Review, Notification, Inquiry, Saved, Watched, Want
 lib/             Database connection, auth helpers, Cloudinary configuration
 ```
+
+---
+
+## Author
+
+**Apeksha Chandak**  
+[github.com/Apekshachandak](https://github.com/Apekshachandak)
