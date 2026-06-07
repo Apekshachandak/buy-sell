@@ -1,12 +1,12 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import Navbar from '@/components/Navbar'
 import ListingCard from '@/components/ListingCard'
 import { useSearchParams, useRouter } from 'next/navigation'
 
 const CATEGORIES = ['electronics', 'clothing', 'furniture', 'books', 'vehicles', 'sports', 'appliances', 'music', 'toys & games', 'jewelry', 'art & collectibles', 'kitchen', 'stationery & office', 'baby & kids', 'other']
 
-export default function BrowsePage() {
+function BrowseContent() {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -132,5 +132,13 @@ export default function BrowsePage() {
         </div>
       </main>
     </>
+  )
+}
+
+export default function BrowsePage() {
+  return (
+    <Suspense fallback={<><Navbar /><div style={{ textAlign: 'center', padding: 80 }}>Loading...</div></>}>
+      <BrowseContent />
+    </Suspense>
   )
 }
