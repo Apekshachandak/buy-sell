@@ -87,46 +87,71 @@ function ListingDetail() {
   const [offerSubmitting, setOfferSubmitting] = useState(false)
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/listings/${id}`).then(r => r.json().then(d => ({ ok: r.ok, ...d }))),
-      fetch('/api/auth/me').then(r => r.json()),
-      fetch('/api/saved').then(r => r.json()).catch(() => ({ saved: [] })),
-      fetch('/api/watched').then(r => r.json()).catch(() => ({ watched: [] })),
-    ]).then(([ld, ud, sd, wd]) => {
-      if (!ld.ok || !ld.listing) {
-        // Server error (500) — don't show 'not found', allow retry
-        if (ld.error && ld.error !== 'Listing not found') setLoadError(true)
-        setLoading(false)
-        return
-      }
-      setListing(ld.listing)
-      if (ud.user) {
-        const me = ud.user
-        setCurrentUser(me)
-        setIsSaved(sd.saved?.some(s => s.listingId?._id === id || s.listingId === id))
-        setIsWatching(wd.watched?.some(w => w.listingId?._id === id || w.listingId === id))
-        fetch(`/api/inquiries?listingId=${id}`).then(r => r.json()).then(d => {
-          const inqs = d.inquiries || []
-          const isSeller = ld.listing && me._id === ld.listing.sellerId?._id?.toString()
-          if (isSeller) {
-            setThreads(inqs)
-            if (inqs.length > 0) setActiveThread(inqs[0])
-          } else {
-            const mine = inqs.find(i =>
-              i.buyerId?._id?.toString() === me._id || i.buyerId?.toString() === me._id
-            )
-            if (mine) setThread(mine)
+    let cancelled = false
+
+    async function fetchListing(attemptsLeft = 3) {
+      try {
+        const r = await fetch(`/api/listings/${id}`)
+        const d = await r.json()
+        if (!r.ok) {
+          // True 404 — listing doesn't exist
+          if (r.status === 404) { if (!cancelled) setLoading(false); return }
+          // Server error — retry if attempts remain
+          if (attemptsLeft > 1) {
+            await new Promise(res => setTimeout(res, 1000))
+            return fetchListing(attemptsLeft - 1)
           }
-        }).catch(() => {})
-        // Fetch offers
-        fetch(`/api/offers?listingId=${id}`).then(r => r.json()).then(od => {
-          const isSeller = ld.listing && me._id === ld.listing.sellerId?._id?.toString()
-          if (isSeller) setSellerOffers(od.offers || [])
-          else if (od.offer) setMyOffer(od.offer)
-        }).catch(() => {})
+          if (!cancelled) { setLoadError(true); setLoading(false) }
+          return
+        }
+        if (cancelled) return
+        setListing(d.listing)
+        setLoading(false)
+        // Load auth-dependent data independently — never blocks listing display
+        loadAuthData(d.listing)
+      } catch {
+        if (attemptsLeft > 1) {
+          await new Promise(res => setTimeout(res, 1000))
+          return fetchListing(attemptsLeft - 1)
+        }
+        if (!cancelled) { setLoadError(true); setLoading(false) }
       }
-      setLoading(false)
-    }).catch(() => { setLoadError(true); setLoading(false) })
+    }
+
+    async function loadAuthData(listingData) {
+      try {
+        const [ud, sd, wd] = await Promise.all([
+          fetch('/api/auth/me').then(r => r.json()).catch(() => ({ user: null })),
+          fetch('/api/saved').then(r => r.json()).catch(() => ({ saved: [] })),
+          fetch('/api/watched').then(r => r.json()).catch(() => ({ watched: [] })),
+        ])
+        if (cancelled) return
+        if (ud.user) {
+          const me = ud.user
+          setCurrentUser(me)
+          setIsSaved(sd.saved?.some(s => s.listingId?._id === id || s.listingId === id))
+          setIsWatching(wd.watched?.some(w => w.listingId?._id === id || w.listingId === id))
+          const isSeller = me._id === listingData.sellerId?._id?.toString()
+          fetch(`/api/inquiries?listingId=${id}`).then(r => r.json()).then(d => {
+            if (cancelled) return
+            const inqs = d.inquiries || []
+            if (isSeller) { setThreads(inqs); if (inqs.length > 0) setActiveThread(inqs[0]) }
+            else {
+              const mine = inqs.find(i => i.buyerId?._id?.toString() === me._id || i.buyerId?.toString() === me._id)
+              if (mine) setThread(mine)
+            }
+          }).catch(() => {})
+          fetch(`/api/offers?listingId=${id}`).then(r => r.json()).then(od => {
+            if (cancelled) return
+            if (isSeller) setSellerOffers(od.offers || [])
+            else if (od.offer) setMyOffer(od.offer)
+          }).catch(() => {})
+        }
+      } catch { /* auth data failure is non-fatal */ }
+    }
+
+    fetchListing()
+    return () => { cancelled = true }
   }, [id])
 
   function showToast(msg, type = 'success') {
