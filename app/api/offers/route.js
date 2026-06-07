@@ -18,39 +18,55 @@ export async function POST(req) {
 
     const listing = await Listing.findById(listingId).populate('sellerId', 'name email phone')
     if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
-    if (listing.sellerId._id.toString() === user._id.toString())
+
+    // Safe sellerId accessor — populated gives a User object, un-populated gives ObjectId
+    const sellerId = listing.sellerId?._id ?? listing.sellerId
+    if (!sellerId) return NextResponse.json({ error: 'Listing has no seller' }, { status: 400 })
+
+    if (sellerId.toString() === user._id.toString())
       return NextResponse.json({ error: 'Cannot offer on your own listing' }, { status: 400 })
 
     const finalAmount = buyNow ? listing.price : Number(amount)
     const finalStatus = buyNow ? 'accepted' : 'pending'
 
+    // Use $set so the unique index on {listingId, buyerId} is never violated on re-offers
     const offer = await Offer.findOneAndUpdate(
       { listingId, buyerId: user._id },
       {
-        listingId, buyerId: user._id, sellerId: listing.sellerId._id,
-        amount: finalAmount, status: finalStatus, counterAmount: null
+        $set: {
+          sellerId,
+          amount: finalAmount,
+          status: finalStatus,
+          counterAmount: null,
+        }
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     )
 
-    // If buy now, mark listing as bought and notify seller
-    if (buyNow) {
-      await Listing.findByIdAndUpdate(listingId, { boughtBy: user._id })
-      await Notification.create({
-        userId: listing.sellerId._id,
-        type: 'offer',
-        message: `🎉 ${user.name} accepted your listed price of ₹${listing.price.toLocaleString('en-IN')} on "${listing.title}"!`,
-        listingId,
-        read: false,
-      })
-    } else {
-      await Notification.create({
-        userId: listing.sellerId._id,
-        type: 'offer',
-        message: `${user.name} offered ₹${finalAmount.toLocaleString('en-IN')} on your listing "${listing.title}"`,
-        listingId,
-        read: false,
-      })
+    // Notify seller
+    const sellerName = listing.sellerId?.name || 'Seller'
+    try {
+      if (buyNow) {
+        await Listing.findByIdAndUpdate(listingId, { boughtBy: user._id })
+        await Notification.create({
+          userId: sellerId,
+          type: 'offer',
+          message: `${user.name} accepted your listed price of Rs.${listing.price.toLocaleString('en-IN')} on "${listing.title}"`,
+          listingId,
+          read: false,
+        })
+      } else {
+        await Notification.create({
+          userId: sellerId,
+          type: 'offer',
+          message: `${user.name} offered Rs.${finalAmount.toLocaleString('en-IN')} on your listing "${listing.title}"`,
+          listingId,
+          read: false,
+        })
+      }
+    } catch (notifErr) {
+      // Notification failure should not break the offer
+      console.error('Notification error (non-fatal):', notifErr)
     }
 
     const populated = await Offer.findById(offer._id)
@@ -60,7 +76,7 @@ export async function POST(req) {
     return NextResponse.json({ offer: populated }, { status: 201 })
   } catch (err) {
     console.error('Offer POST error:', err)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Server error', detail: err.message }, { status: 500 })
   }
 }
 
@@ -78,7 +94,8 @@ export async function GET(req) {
     const listing = await Listing.findById(listingId)
     if (!listing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    const isSeller = listing.sellerId.toString() === user._id.toString()
+    const sellerId = listing.sellerId?._id ?? listing.sellerId
+    const isSeller = sellerId?.toString() === user._id.toString()
 
     if (isSeller) {
       const offers = await Offer.find({ listingId })
@@ -92,6 +109,7 @@ export async function GET(req) {
       return NextResponse.json({ offer: offer || null })
     }
   } catch (err) {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    console.error('Offer GET error:', err)
+    return NextResponse.json({ error: 'Server error', detail: err.message }, { status: 500 })
   }
 }
