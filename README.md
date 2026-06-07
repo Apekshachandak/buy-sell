@@ -225,6 +225,18 @@ lib/             Database connection, auth helpers, Cloudinary configuration
 
 ---
 
+## Design Process
+
+Before writing any code, I worked through the product and technical decisions in writing. The documents in `docs/brainstorming/` capture the key questions and reasoning behind each decision — what problem the feature solves, why a specific implementation was chosen over alternatives, and where the tradeoffs were consciously made.
+
+- [`docs/brainstorming/01-problem-and-users.md`](docs/brainstorming/01-problem-and-users.md) — Problem framing, user model, scope boundaries, and trust mechanism
+- [`docs/brainstorming/02-feature-design.md`](docs/brainstorming/02-feature-design.md) — Feature decisions: why the offer system works the way it does, when to reveal contact, how ISO matching was scoped, and why the messaging and offer systems coexist
+- [`docs/brainstorming/03-technical-decisions.md`](docs/brainstorming/03-technical-decisions.md) — Architecture decisions: stack choices, auth approach, database schema tradeoffs, how notifications work, and how the offer data model prevents conflicts
+
+The full product requirements document is at [`prd/trove.md`](prd/trove.md). It covers the problem statement, user stories, implementation decisions, and out-of-scope items. The PRD was broken down into nine independently-workable vertical slices in [`issues/`](issues/), each with acceptance criteria and dependency tracking.
+
+---
+
 ## Author
 
 **Apeksha Chandak**  
