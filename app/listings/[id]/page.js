@@ -69,6 +69,7 @@ function ListingDetail() {
   const [activeThread, setActiveThread] = useState(null)
   const [replyMsg, setReplyMsg] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [activeImg, setActiveImg] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
@@ -87,11 +88,17 @@ function ListingDetail() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/listings/${id}`).then(r => r.json()),
+      fetch(`/api/listings/${id}`).then(r => r.json().then(d => ({ ok: r.ok, ...d }))),
       fetch('/api/auth/me').then(r => r.json()),
       fetch('/api/saved').then(r => r.json()).catch(() => ({ saved: [] })),
       fetch('/api/watched').then(r => r.json()).catch(() => ({ watched: [] })),
     ]).then(([ld, ud, sd, wd]) => {
+      if (!ld.ok || !ld.listing) {
+        // Server error (500) — don't show 'not found', allow retry
+        if (ld.error && ld.error !== 'Listing not found') setLoadError(true)
+        setLoading(false)
+        return
+      }
       setListing(ld.listing)
       if (ud.user) {
         const me = ud.user
@@ -119,7 +126,7 @@ function ListingDetail() {
         }).catch(() => {})
       }
       setLoading(false)
-    }).catch(() => setLoading(false))
+    }).catch(() => { setLoadError(true); setLoading(false) })
   }, [id])
 
   function showToast(msg, type = 'success') {
@@ -249,6 +256,16 @@ function ListingDetail() {
   }
 
   if (loading) return <><Navbar /><div style={{ textAlign: 'center', padding: 80 }}>Loading...</div></>
+  if (loadError) return (
+    <>
+      <Navbar />
+      <div style={{ textAlign: 'center', padding: 80 }}>
+        <div style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 12 }}>Could not load this listing</div>
+        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 20 }}>This might be a temporary connection issue. Please try again.</div>
+        <button className="btn btn-primary" onClick={() => { setLoadError(false); setLoading(true); window.location.reload() }}>Retry</button>
+      </div>
+    </>
+  )
   if (!listing) return <><Navbar /><div style={{ textAlign: 'center', padding: 80 }}>Listing not found</div></>
 
   const isOwner = currentUser && currentUser._id === listing.sellerId?._id?.toString()
