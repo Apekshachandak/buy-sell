@@ -34,15 +34,27 @@ function BrowseContent() {
     if (minPrice) params.set('minPrice', minPrice)
     if (maxPrice) params.set('maxPrice', maxPrice)
     params.set('page', page)
-    try {
-      const res = await fetch(`/api/listings?${params}`)
-      const data = await res.json()
-      setListings(data.listings || [])
-      setTotal(data.total || 0)
-      setPages(data.pages || 1)
-    } catch {}
+
+    async function attempt(left) {
+      try {
+        const res = await fetch(`/api/listings?${params}`)
+        const data = await res.json()
+        if (!res.ok) {
+          if (left > 1) { await new Promise(r => setTimeout(r, 1000)); return attempt(left - 1) }
+          return
+        }
+        setListings(data.listings || [])
+        setTotal(data.total || 0)
+        setPages(data.pages || 1)
+      } catch {
+        if (left > 1) { await new Promise(r => setTimeout(r, 1000)); return attempt(left - 1) }
+      }
+    }
+
+    await attempt(3)
     setLoading(false)
   }, [search, category, minPrice, maxPrice, page])
+
 
   useEffect(() => { fetchListings() }, [fetchListings])
 

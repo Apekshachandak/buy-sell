@@ -21,12 +21,27 @@ export default function ISOPage() {
     loadWants()
   }, [])
 
-  async function loadWants(cat = '') {
+  async function loadWants(cat = '', attemptsLeft = 3) {
     setLoading(true)
-    const params = cat ? `?category=${cat}` : ''
-    const res = await fetch(`/api/wants${params}`)
-    const d = await res.json()
-    setWants(d.wants || [])
+    try {
+      const params = cat ? `?category=${cat}` : ''
+      const res = await fetch(`/api/wants${params}`)
+      const d = await res.json()
+      if (!res.ok) {
+        if (attemptsLeft > 1) {
+          await new Promise(r => setTimeout(r, 1000))
+          return loadWants(cat, attemptsLeft - 1)
+        }
+        setLoading(false)
+        return
+      }
+      setWants(d.wants || [])
+    } catch {
+      if (attemptsLeft > 1) {
+        await new Promise(r => setTimeout(r, 1000))
+        return loadWants(cat, attemptsLeft - 1)
+      }
+    }
     setLoading(false)
   }
 
