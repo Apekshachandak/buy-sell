@@ -1,113 +1,175 @@
 # Trove — Second-Hand Marketplace
 
-> Find it. Buy it. Pass it on. A modern, community-driven platform for buying and selling pre-loved items — built for real people, not corporations.
+A full-stack marketplace for buying and selling pre-loved items. Built to solve the real friction points in peer-to-peer commerce: unstructured negotiation, no accountability, and zero transaction visibility.
+
+**Live:** [https://buy-sell-drab.vercel.app](https://buy-sell-drab.vercel.app)  
+**Stack:** Next.js 15 · MongoDB Atlas · Cloudinary · Vercel
 
 ---
 
-## 🌐 Live Demo
+## Why Trove
 
-**[https://buy-sell-drab.vercel.app](https://buy-sell-drab.vercel.app)**
+Existing platforms like OLX and Facebook Marketplace are functional but shallow. They treat every interaction as a message thread, leaving pricing, intent, and accountability entirely unstructured.
 
-> Full-stack Next.js app — not just a frontend. Includes real auth, MongoDB database, image uploads, real-time messaging, and a complete offer/negotiation system.
+Trove was designed from the ground up to address this:
+
+- **Negotiation has no standard format** on existing platforms. Buyers send informal messages, sellers ignore them, and deals fall through. Trove introduces a formal offer system where buyers submit prices, sellers respond with accept/decline/counter, and both parties are notified at every step.
+
+- **Contact details are publicly exposed or never shared at the right time.** Trove reveals phone and email only after a price is agreed on — protecting privacy while ensuring the transaction can actually close.
+
+- **Reviews are gamed on most platforms.** Trove enforces server-side verification — a buyer can only rate a seller after a confirmed purchase (accepted offer or buy-now). No fake reviews.
+
+- **Sellers have no visibility into listing performance.** Trove gives sellers per-listing analytics: view count, save count, and inquiry count, with soft hints when a listing has high views but no engagement — so sellers can adjust pricing or description.
+
+- **Buyers have no way to signal demand.** Trove includes an ISO (I'm Looking For) board where buyers post what they want. When a matching listing is created, the buyer is notified instantly — reversing the typical discovery flow.
+
+- **There is no transaction record.** Trove tracks buying and selling history for every user, including final negotiated prices and how much was saved versus the listed price.
 
 ---
 
-## Why Trove?
+## Feature Set
 
-Existing platforms like OLX or Facebook Marketplace are cluttered, ad-heavy, and lack structured communication between buyers and sellers. Trove fixes this with:
+### Authentication and Accounts
 
-- **Structured price negotiation** — no more awkward "is this available?" DMs. Buyers can make counter-offers, sellers can respond — all in one clean UI.
-- **Contact reveal only on deal** — phone/email is shared only after both parties agree on a price, protecting privacy.
-- **Purchase-gated reviews** — you can only rate a seller after actually buying from them, preventing fake reviews.
-- **ISO (I'm Looking For) board** — buyers post what they want, sellers find them. Reverses the traditional model.
-- **Price watch** — get notified automatically if a watched listing drops in price.
+- Signup and login with email and password
+- JWT stored in httpOnly cookies — immune to XSS, no localStorage exposure
+- Middleware-protected routes: unauthenticated users are redirected to login
+- New users land on Browse immediately after signup, not an empty dashboard
+- Login error distinguishes between "account not found" and "wrong password" — if the email does not exist, a Create Account prompt appears inline
 
 ---
 
-## ✨ Features
+### Listings
 
-### 🔐 Auth & Accounts
-- JWT-based authentication (httpOnly cookies — secure by default)
-- Signup → lands on Browse so new users immediately discover listings
-- Login error distinguishes "wrong password" from "account not found" — shows **Create an Account** CTA if email doesn't exist
+- Create, edit, and delete listings
+- Multi-image upload via Cloudinary with live preview
+- Smart Listing Templates: category-specific structured fields (e.g., RAM, storage, condition for Electronics; size, fabric for Clothing) that auto-assemble a clean, readable description in real time — sellers do not write descriptions from scratch
+- 15 categories supported
+- Listings can be marked as sold by the seller
+- View count tracked per listing
 
-### 🛒 Browse & Discovery
-- Search by keyword + filter by 15 categories + sort by price/date/popularity
-- Infinite pagination
-- Sellers never see their own listings in Browse (why would they buy their own items?)
+---
 
-### 📦 Listings
-- Multi-image upload via Cloudinary
-- Smart listing templates per category (pre-filled fields for electronics, furniture, etc.)
-- View count tracking per listing
-- Price watch — authenticated users can subscribe to price drops
-- Listing status: Active / Sold
+### Browse and Discovery
 
-### 🤝 Make an Offer — Negotiation System
-> The core differentiator. Most marketplaces have zero negotiation structure.
+- Browse all active listings with keyword search, category filter, price range filter, and sort (newest, price low-to-high, price high-to-low, most viewed)
+- Sellers do not see their own listings in Browse — prevents irrelevant results
+- Paginated results
 
-| Flow | Description |
+---
+
+### Offer and Negotiation System
+
+The core differentiator. Most marketplaces have no structure for price negotiation.
+
+| Action | Description |
 |---|---|
-| **Accept Listed Price** | Buyer agrees to the asking price instantly — deal is done |
-| **Make Offer** | Buyer proposes a lower price |
-| **Seller: Accept** | Deal confirmed at offered price |
-| **Seller: Decline** | Buyer is notified; listing stays active so they can re-offer |
-| **Seller: Counter** | Seller proposes a middle ground |
-| **Buyer: Accept Counter** | Final deal at counter price |
-| **Buyer: Decline Counter** | Offer form resets — buyer can try again |
+| Accept Listed Price | Buyer agrees to the asking price. Deal is confirmed instantly. |
+| Make Offer | Buyer proposes a lower price. Seller is notified. |
+| Accept | Seller accepts the buyer's offer. Deal confirmed. |
+| Decline | Seller declines. Buyer is notified; listing stays active. Buyer can re-offer. |
+| Counter | Seller proposes a middle ground price. Buyer is notified. |
+| Accept Counter | Buyer agrees to the counter price. Deal confirmed. |
+| Decline Counter | Buyer declines. Offer form resets; buyer can make a fresh offer. |
 
-All state transitions send **in-app notifications** to the other party automatically.
-
-### 📞 Contact Reveal on Deal
-- Once a deal is agreed, both buyer and seller see each other's **email and phone number**
-- Privacy-first: contact details are hidden until a price is locked in
-- Removes the awkward "DM me for number" flow
-
-### ⭐ Reviews — Purchase Gated
-- Buyers can review sellers **only after completing a purchase** (accepted offer or buy-now)
-- API enforces this server-side — not just a UI toggle
-- Prevents fake/spam reviews from people who never transacted
-
-### 💬 Messaging
-- Per-listing inquiry threads between buyer and seller
-- Unread message badge on dashboard Messages tab
-- Thread labelled by the other person's name
-
-### 🔔 Notifications
-- Real-time in-app notifications for: new offers, offer accepted/declined/countered, price drops, ISO matches
-- Unread count badge on bell icon in navbar
-- Click notification → goes directly to relevant listing
-
-### 📊 Dashboard
-| Tab | What it shows |
-|---|---|
-| My Listings | All your active/sold listings with view/save/watch stats |
-| Saved | Listings you hearted |
-| Messages | All inquiry threads with unread badge |
-| Notifications | All activity alerts |
-| **History** | **Items you bought (with savings shown) + Items you sold (with buyer info)** |
-
-### 🔍 ISO Board (I'm Looking For)
-- Buyers post requests for items they want
-- Sellers can browse ISOs and message matching buyers directly
-- Auto-matches ISOs to new listings and sends notifications
+Every state transition triggers an in-app notification to the other party. One active offer per buyer per listing at a time — prevents spam.
 
 ---
 
-## 🛠 Tech Stack
+### Contact Reveal on Confirmed Deal
+
+Once a deal is agreed on (via Accept, Accept Counter, or Accept Listed Price):
+
+- The buyer sees the seller's name, email, and phone number
+- The seller sees the buyer's name, email, and phone number
+
+Contact details are not visible before a deal is confirmed. This removes the privacy risk of publicly exposing contact information while ensuring the transaction can actually close.
+
+---
+
+### Seller Inquiry (Messaging)
+
+- Per-listing message thread initiated by the buyer
+- Seller can respond from the listing detail page or from the dashboard
+- Unread indicator on the Messages tab — shows count of threads where the other party sent the last message
+- Thread labelled by the other person's name, not by listing title
+
+---
+
+### Save and Price Watch
+
+- Buyers can save listings to a personal bookmark list
+- Buyers can watch a listing for price changes
+- If the seller lowers the price, all watchers receive an in-app notification with the old and new price
+- Heart toggle on every listing card and detail page
+
+---
+
+### ISO Board (I'm Looking For)
+
+- Buyers post requests for specific items they want
+- Sellers can browse ISO posts and message matching buyers directly
+- When a new listing is created that matches an existing ISO request (by category or keyword), the ISO poster is notified automatically
+
+---
+
+### Notifications
+
+- In-app notification feed for: new offers, offer accepted, offer declined, counter offers, counter accepted, counter declined, price drops on watched listings, ISO matches
+- Unread count badge on the notification bell in the navbar
+- Clicking a notification navigates directly to the relevant listing
+- Mark individual notifications as read, or mark all as read at once
+
+---
+
+### Seller Rating and Reviews
+
+- After marking a listing as sold, the seller can leave a review for the transaction
+- Buyers can rate and review sellers after a confirmed purchase only — enforced at the API level using the accepted offer record
+- 1 to 5 star rating with an optional comment
+- Seller's average rating and review count are displayed on their public profile
+
+---
+
+### Listing Performance Dashboard
+
+- Each seller listing shows: total views, save count, and inquiry count
+- Soft hint displayed when a listing has a high view count but zero inquiries — signals that the price or description may need adjustment
+- Gives sellers actionable visibility instead of a passive listing status
+
+---
+
+### Transaction History
+
+- Dashboard History tab shows two sections:
+  - **Items Bought:** all listings purchased, with the final price paid and the amount saved compared to the listed price
+  - **Items Sold:** all listings sold, with the final sale price, buyer name, and date
+- Provides a permanent record of all transactions for both sides
+
+---
+
+### User Profile
+
+- Public profile page showing name, bio, avatar, join date, and average seller rating
+- Lists all active and sold listings by the user
+- Ratings and reviews from past transactions displayed
+
+---
+
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
 | Framework | Next.js 15 (App Router) |
-| Database | MongoDB Atlas + Mongoose |
-| Auth | JWT (httpOnly cookies) |
+| Database | MongoDB Atlas with Mongoose |
+| Authentication | JWT via httpOnly cookies |
 | Image Storage | Cloudinary |
-| Styling | Vanilla CSS (custom design system) |
+| Styling | Vanilla CSS with a custom design system |
 | Deployment | Vercel |
 
 ---
 
-## 🚀 Run Locally
+## Run Locally
 
 ```bash
 git clone https://github.com/Apekshachandak/buy-sell.git
@@ -115,7 +177,8 @@ cd buy-sell
 npm install
 ```
 
-Create `.env.local`:
+Create `.env.local` in the project root:
+
 ```env
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
@@ -134,21 +197,17 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 app/
-  api/           ← All API routes (auth, listings, offers, reviews, history...)
-  auth/          ← Login & Signup pages
-  browse/        ← Marketplace browse with search/filter
-  dashboard/     ← User dashboard (listings, messages, history)
-  listings/      ← Listing detail + create + edit
-  iso/           ← ISO board
-components/      ← Navbar, ListingCard, StarRating, SmartTemplate
-models/          ← Mongoose schemas (User, Listing, Offer, Review, Notification...)
-lib/             ← DB connection, auth helpers, Cloudinary config
+  api/           API routes — auth, listings, offers, reviews, history, notifications
+  auth/          Login and signup pages
+  browse/        Marketplace browse with search, filter, and pagination
+  dashboard/     User dashboard — listings, messages, history, notifications
+  listings/      Listing detail, create, and edit pages
+  iso/           ISO board
+components/      Navbar, ListingCard, StarRating, SmartTemplate
+models/          Mongoose schemas — User, Listing, Offer, Review, Notification, Inquiry, Saved, Watched, Want
+lib/             Database connection, auth helpers, Cloudinary configuration
 ```
-
----
-
-*Built with ❤️ — because good stuff deserves a second life.*
