@@ -25,6 +25,7 @@ function DashboardContent() {
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [stats, setStats] = useState({})
+  const [history, setHistory] = useState({ buyerHistory: [], sellerHistory: [] })
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -42,12 +43,14 @@ function DashboardContent() {
         fetch('/api/saved').then(r => r.json()),
         fetch('/api/inquiries').then(r => r.json()),
         fetch('/api/notifications').then(r => r.json()),
-      ]).then(([pd, sd, id, nd]) => {
+        fetch('/api/history').then(r => r.json()),
+      ]).then(([pd, sd, id, nd, hd]) => {
         setMyListings(pd.listings || [])
         setSaved(sd.saved || [])
         setInquiries(id.inquiries || [])
         setNotifications(nd.notifications || [])
         setUnreadCount(nd.unreadCount || 0)
+        setHistory({ buyerHistory: hd.buyerHistory || [], sellerHistory: hd.sellerHistory || [] })
         setLoading(false)
         pd.listings?.forEach(l => {
           fetch(`/api/listings/${l._id}/stats`).then(r => r.json()).then(s => {
@@ -122,6 +125,7 @@ function DashboardContent() {
           return lastSenderId !== user?._id  // other person replied last = unread
         }).length)}
         {tabBtn('notifications', 'Notifications', unreadCount)}
+        {tabBtn('history', 'History', history.buyerHistory.length + history.sellerHistory.length)}
       </div>
 
       {/* MY LISTINGS */}
@@ -295,6 +299,74 @@ function DashboardContent() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* HISTORY */}
+      {tab === 'history' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          {/* Buyer History */}
+          <div>
+            <h3 style={{ fontWeight: 700, marginBottom: 16, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🛒 Items I Bought <span style={{ fontSize: '0.78rem', fontWeight: 400, color: 'var(--text-muted)' }}>({history.buyerHistory.length})</span>
+            </h3>
+            {history.buyerHistory.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">🛍️</div>
+                <div className="empty-state-title">No purchases yet</div>
+                <div className="empty-state-subtitle">Items you buy will appear here</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {history.buyerHistory.map(item => (
+                  <div key={item.offerId} style={{ background: 'var(--card)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '14px 18px', display: 'flex', gap: 14, alignItems: 'center' }}>
+                    {item.listing?.images?.[0] && <img src={item.listing.images[0]} alt={item.listing?.title} style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 2 }}>{item.listing?.title || 'Listing'}</div>
+                      <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Seller: {item.listing?.sellerId?.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.date ? new Date(item.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--accent)' }}>₹{item.paidAmount?.toLocaleString('en-IN')}</div>
+                      {item.savedAmount > 0 && <div style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>saved ₹{item.savedAmount.toLocaleString('en-IN')}</div>}
+                      {item.listedPrice !== item.paidAmount && item.savedAmount <= 0 && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>listed at ₹{item.listedPrice?.toLocaleString('en-IN')}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Seller History */}
+          <div>
+            <h3 style={{ fontWeight: 700, marginBottom: 16, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              🏷️ Items I Sold <span style={{ fontSize: '0.78rem', fontWeight: 400, color: 'var(--text-muted)' }}>({history.sellerHistory.length})</span>
+            </h3>
+            {history.sellerHistory.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">📦</div>
+                <div className="empty-state-title">No sales yet</div>
+                <div className="empty-state-subtitle">Listings you sell will appear here</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {history.sellerHistory.map(item => (
+                  <div key={item.listingId} style={{ background: 'var(--card)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '14px 18px', display: 'flex', gap: 14, alignItems: 'center' }}>
+                    {item.images?.[0] && <img src={item.images[0]} alt={item.title} style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 2 }}>{item.title}</div>
+                      {item.buyer && <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Sold to: {item.buyer.name}</div>}
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.date ? new Date(item.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--accent)' }}>₹{item.soldFor?.toLocaleString('en-IN')}</div>
+                      {item.listedPrice !== item.soldFor && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>listed at ₹{item.listedPrice?.toLocaleString('en-IN')}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

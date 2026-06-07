@@ -41,7 +41,16 @@ export default function LoginPage() {
             <label className="form-label">Password</label>
             <input id="login-password" className="form-input" type="password" placeholder="••••••••" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} required autoComplete="current-password" />
           </div>
-          {error && <div style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: 12 }}>{error}</div>}
+          {error && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: error.includes('sign up') ? 8 : 0 }}>{error}</div>
+              {error.includes('sign up') && (
+                <Link href="/auth/signup" className="btn btn-secondary btn-sm" style={{ width: '100%', display: 'block', textAlign: 'center' }}>
+                  Create an Account →
+                </Link>
+              )}
+            </div>
+          )}
           <button id="login-submit" type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: 16 }} disabled={loading}>
             {loading ? 'Logging in...' : 'Log In'}
           </button>
