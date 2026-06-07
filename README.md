@@ -42,11 +42,22 @@ Trove was designed from the ground up to address this:
 ### Listings
 
 - Create, edit, and delete listings
-- Multi-image upload via Cloudinary with live preview
-- Smart Listing Templates: category-specific structured fields (e.g., RAM, storage, condition for Electronics; size, fabric for Clothing) that auto-assemble a clean, readable description in real time — sellers do not write descriptions from scratch
+- Multi-image upload via Cloudinary with live preview (up to 3 images per listing)
 - 15 categories supported
 - Listings can be marked as sold by the seller
 - View count tracked per listing
+
+---
+
+### Smart Listing Templates
+
+Writing a good listing description is the biggest friction point for sellers on any marketplace. Most people either write nothing useful ("selling my laptop, good condition") or spend time figuring out what details buyers actually care about.
+
+Trove solves this with category-specific structured templates. When a seller selects a category, a set of relevant fields appears — for Electronics: brand, model, RAM, storage, screen size, condition; for Clothing: brand, size, color, fabric, condition; for Furniture: material, dimensions, condition; and so on across all 15 categories.
+
+As the seller fills in these fields, the listing description is assembled automatically in real time and displayed as a live preview. The seller sees exactly what buyers will read before publishing. No free-text writing required, no blank description fields, and no inconsistency between listings in the same category.
+
+The template data is also stored structurally alongside the listing, making it available for future filtering by spec (e.g., filter Electronics by RAM or storage size).
 
 ---
 
