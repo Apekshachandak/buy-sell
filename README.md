@@ -7,6 +7,30 @@ A full-stack marketplace for buying and selling pre-loved items. Built to solve 
 
 ---
 
+## Demo Videos
+
+> Every feature has an individual screen recording demonstrating it end-to-end.  
+> **[View all feature demo videos on Google Drive](https://drive.google.com/drive/folders/1GxpcCIiRFxw7CnaVBCXSfiMrKaxFNbvN?usp=sharing)**
+
+The Drive folder contains separate recordings for:
+
+| Feature | What the video covers |
+|---|---|
+| Auth (Signup / Login) | Account creation, login error handling, session persistence |
+| Browse & Discovery | Search, category filter, price range, sort options |
+| Smart Listing Templates | Category-specific fields, live description preview, image upload |
+| Offer & Negotiation | Accept listed price, make offer, counter, accept/decline counter |
+| Contact Reveal | Contact details unlocked for both parties after deal confirmation |
+| Seller Inquiry (Messaging) | Buyer initiates thread, seller replies, unread indicators |
+| Save & Price Watch | Bookmark toggle, price drop notification flow |
+| ISO Board | Posting a wanted request, automatic match notification on new listing |
+| Notifications | Full notification feed, unread badge, mark-as-read |
+| Seller Reviews | Purchase-gated review submission, rating on public profile |
+| Listing Performance | View/save/inquiry counts, low-engagement hint |
+| Transaction History | Buyer purchase history with savings, seller sold history with buyer info |
+
+---
+
 ## Design Process
 
 Before writing any code, I worked through the product and technical decisions in writing. The documents in `docs/brainstorming/` capture the key questions and reasoning behind each decision — what problem the feature solves, why a specific implementation was chosen over alternatives, and where the tradeoffs were consciously made.
